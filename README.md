@@ -12,7 +12,7 @@ git clone git@github.com:jayed008/bayesian-judgment-journal.git \
   ~/.agents/skills/bayesian-judgment-journal
 ```
 
-在你想存放账本的工作区打开 Codex，通过技能选择器选中「贝叶斯判断账本」，或者在支持 `$` 调用的界面输入 `$bayesian-judgment-journal`。首次要求写入记录时，Skill 优先使用你指定的路径，否则使用当前工作区的 `.bayesian-judgment-journal/`。后续可以在同一工作区查询，也可以在新会话中指定原账本路径。[Codex 技能文档](https://learn.chatgpt.com/docs/build-skills#where-codex-loads-local-skills)
+在 Codex 的技能选择器中选中「贝叶斯判断账本」，或者在支持 `$` 调用的界面输入 `$bayesian-judgment-journal`。同一 Skill 安装下，各工作区可以查询同一份默认账本。需要使用其他账本时，在请求中指定目录。[Codex 技能文档](https://learn.chatgpt.com/docs/build-skills#where-codex-loads-local-skills)
 
 ## 以项目上线判断为例
 
@@ -64,10 +64,10 @@ $$
 
 ## 账本文件
 
-账本保存在工作区或你指定的数据目录，使用普通 Markdown 文件。
+默认账本位于 Skill 安装目录下的 `records/`，与 `SKILL.md` 同级，首次写入时创建。按上面的方式安装时，默认路径为 `~/.agents/skills/bayesian-judgment-journal/records/`。账本使用普通 Markdown 文件。
 
 ```text
-.bayesian-judgment-journal/
+records/
   journal.md          账本信息和判断索引
   judgments/          各命题的先验、证据评估和更新历史
   events/             事件定义、事前预测、实际观察和修订
