@@ -20,6 +20,8 @@ git clone git@github.com:jayed008/bayesian-judgment-journal.git \
 
 **1. 建立判断。** 写清要判断什么、以什么条件为前提、什么时候判定、用什么来源核验。
 
+如果没有提供先验，Skill 会先询问初始概率。跳过或询问后未提供数值时，以 **50%** 起步，账本会注明这是默认先验。
+
 ```text
 使用 $bayesian-judgment-journal 记录这个判断。
 项目 A 会按现有范围在 2027-03-31 18:00（北京时间）前上线，以上线验收单的签署时间为准。
