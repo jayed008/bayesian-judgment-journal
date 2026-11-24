@@ -1,10 +1,12 @@
-# 贝叶斯判断账本
+# Bayesian Judgment Journal
 
-一个 Codex Skill，用来记录可验证的判断，并在新证据出现后更新成立概率。账本保留最初的估计、各次更新的依据和结案结果，便于之后回看当时知道什么、为什么改变判断。
+[简体中文](README.zh-CN.md)
 
-## 安装与使用
+A Codex skill for recording verifiable judgments and updating their probabilities as new evidence arrives. The journal keeps the original estimate, the rationale for each update, and the eventual outcome so you can review what you knew at the time and why your judgment changed.
 
-有仓库读取权限并配置好 GitHub SSH 后，在终端执行以下命令，将 Skill 安装到 Codex 的用户级目录。
+## Install and use
+
+With access to the repository and GitHub SSH configured, install the skill in your Codex user-level directory.
 
 ```bash
 mkdir -p ~/.agents/skills
@@ -12,45 +14,45 @@ git clone git@github.com:jayed008/bayesian-judgment-journal.git \
   ~/.agents/skills/bayesian-judgment-journal
 ```
 
-在 Codex 的技能选择器中选中「贝叶斯判断账本」，或者在支持 `$` 调用的界面输入 `$bayesian-judgment-journal`。同一 Skill 安装下，各工作区可以查询同一份默认账本。需要使用其他账本时，在请求中指定目录。[Codex 技能文档](https://learn.chatgpt.com/docs/build-skills#where-codex-loads-local-skills)
+Select **Bayesian Judgment Journal** in the Codex skill picker or enter `$bayesian-judgment-journal` in an interface that supports `$` mentions. Workspaces using the same skill installation share the default journal. To use a different journal, specify its directory in your request. [Codex skills documentation](https://learn.chatgpt.com/docs/build-skills#where-codex-loads-local-skills)
 
-## 以项目上线判断为例
+## Example project launch judgment
 
-以下命题、日期和概率均为假设。替换成自己的数据即可开始记录。
+The proposition, dates, and probabilities below are hypothetical. Substitute your own values to start a journal.
 
-**1. 建立判断。** 写清要判断什么、以什么条件为前提、什么时候判定、用什么来源核验。
+**1. Create a judgment.** State the proposition, its conditions, the deadline, and the source you will use to verify the outcome.
 
-如果没有提供先验，Skill 会先询问初始概率。跳过或询问后未提供数值时，以 **50%** 起步，账本会注明这是默认先验。
-
-```text
-使用 $bayesian-judgment-journal 记录这个判断。
-项目 A 会按现有范围在 2027-03-31 18:00（北京时间）前上线，以上线验收单的签署时间为准。
-我的初始估计是 80%，依据是当前排期和以往同类项目的交付情况。
-```
-
-**2. 在结果揭晓前预测一个关联事件。** 先定义如何确认事件结果，再给出它在命题成立与不成立两种情况下的概率。
+If you omit the prior, the skill asks for your initial probability. If you skip the question or supply no number, it starts at **50%** and labels it the default prior.
 
 ```text
-为刚才的上线判断记录事前预测。
-事件 E 是联调里程碑延期，以 2027-03-10 18:00（北京时间）的里程碑记录为准。
-原命题成立时，我估计联调延期的概率为 20%。原命题不成立时，我估计为 60%。
-这两个数是我对联调延期与上线进度关系的主观估计，我确认采用。
+Use $bayesian-judgment-journal to record this judgment.
+Project A will launch within its current scope before 18:00 Beijing time on March 31, 2027, as verified by the signing time of the launch acceptance form.
+My initial estimate is 80%, based on the current schedule and delivery outcomes for similar projects.
 ```
 
-**3. 记录实际结果并更新判断。** 说明你观察到了什么、何时获知以及来源。
+**2. Forecast a related event before its outcome is known.** Define how to verify the event, then estimate how likely it is under each possible outcome of the original judgment.
 
 ```text
-3 月 10 日 18:00（北京时间）的里程碑记录显示联调未按时完成，我在当晚查到了该记录。
-请把这次延期纳入原判断，给出更新前后的概率，以及已保存的记录路径。
+Record a prospective event forecast for the launch judgment.
+Event E is a delay in the integration testing milestone, as verified by the March 10, 2027 milestone record as of 18:00 Beijing time.
+I estimate a 20% chance of a delay if the original proposition holds and a 60% chance if it does not.
+These are my estimates of how integration delays relate to the launch schedule. Use them for this forecast.
 ```
 
-在这些假设下，联调延期的事前概率为 **28%**。观察到延期后，似然比为 **1/3**，拟采用的后验为 **57.1%**，更新前为 **80%**。Skill 会在对话中展示这份提案并请你确认。点击「确认写入」后，才会把本次证据和正式后验写入账本。暂未确认时，提案和确认入口留在对话中。界面无法提供按钮时，可用提案下的确认指令回复。
+**3. Report what happened and request an update.** State what you observed, when you learned it, and where the information came from.
 
-写入后可以凭判断 ID 查询当前估计和待评估证据，也可以在验收后按原标准结案，对照最后一次事前预测和实际结果。
+```text
+The March 10 milestone record showed at 18:00 Beijing time that integration testing had not finished on schedule. I saw the record that evening.
+Incorporate the delay into the original judgment. Show the probabilities before and after the update and where the record will be saved.
+```
 
-## 更新原理
+Under these assumptions, the prospective probability of an integration delay was **28%**. Once the delay is observed, its likelihood ratio is **1/3** and the proposed posterior is **57.1%**, down from **80%**. The skill shows the proposal in the conversation and asks you to confirm it. Select **Confirm write** to save the evidence and official posterior. The proposal and confirmation option stay in the conversation while the update awaits confirmation. If your interface lacks a button, use the text command shown below the proposal.
 
-令 $H$ 为原命题，$E$ 为这次实际观察到的结果，$D$ 为已纳入的证据。以 $p=P(H\mid D)$ 为更新前的判断概率，分别估计 $a=P(E\mid H,D)$ 与 $b=P(E\mid\neg H,D)$。两者都描述同一个结果 $E$。
+Once saved, you can look up the current estimate and outstanding evidence by judgment ID. After acceptance, you can resolve the judgment under its original criteria and compare the last prospective forecast with the actual result.
+
+## How the update works
+
+Let $H$ be the original proposition, $E$ the outcome you actually observed, and $D$ the evidence already incorporated. Start with $p=P(H\mid D)$ and estimate $a=P(E\mid H,D)$ and $b=P(E\mid\neg H,D)$. Both estimates describe the same outcome $E$.
 
 $$
 \mathrm{LR}=\frac{a}{b},\qquad
@@ -58,23 +60,27 @@ P(E\mid D)=pa+(1-p)b,\qquad
 P(H\mid D,E)=\frac{pa}{pa+(1-p)b}.
 $$
 
-似然比衡量证据的区分能力。大于 1 时支持原命题，小于 1 时削弱原命题，等于 1 时概率保持不变。乘以似然比的是赔率 $p/(1-p)$，算出新赔率后再换回概率。当观察到的是事件到期未发生，按相同的二元判定标准改用 $1-a$ 和 $1-b$。
+The likelihood ratio measures how well the outcome distinguishes the two possibilities. A ratio above 1 supports the proposition, a ratio below 1 weakens it, and a ratio of 1 leaves the probability unchanged. Equivalently, multiply the odds $p/(1-p)$ by the likelihood ratio and convert back to probability. If a binary event is verified not to have occurred by its deadline, use $1-a$ and $1-b$ for that outcome.
 
-### 证据与历史记录
+### Evidence and history
 
-- **证据按新增信息计算。** 同一条消息的转发只计一次。相关事件要在已知证据的条件下评估新增信息，或用联合模型一起评估。依据不足时记为待评估。
-- **纠错从受影响的地方重算。** 如果后来发现联调其实按时完成，只是里程碑记录漏填，就追加观察修订，重新评估依赖旧观察的更新，同时保留旧轨迹。
-- **保留初始概率和事前记录。** 用户直接调整把握时，账本将其保存为有理由的主观重估，并记录新估计已包含哪些证据。复盘时按原判定标准结案，长期表现可用有时间记录的事前预测计算 Brier 分数。
+- **Count new information once.** A forwarded report adds no evidence on its own. For related events, estimate what each adds given the evidence already included, or evaluate them jointly. Mark evidence as pending when there is too little basis to assess it.
+- **Recalculate from the affected step.** If integration testing finished on time and the milestone record was incomplete, append a correction and reassess the affected updates. Keep the earlier update history and confirm the revised estimate before writing.
+- **Preserve the original prior and prospective forecasts.** A direct change in confidence is recorded as a subjective reassessment with its rationale and the evidence it already reflects. Resolve judgments under their original criteria. Use timestamped prospective forecasts to assess long-term performance with the Brier score.
 
-## 账本文件
+## Journal files
 
-默认账本位于 Skill 安装目录下的 `records/`，与 `SKILL.md` 同级，首次写入时创建。按上面的方式安装时，默认路径为 `~/.agents/skills/bayesian-judgment-journal/records/`。账本使用普通 Markdown 文件。
+The default journal is the `records/` directory next to the installed `SKILL.md`, created on the first write. With the installation above, it is `~/.agents/skills/bayesian-judgment-journal/records/`. The journal uses plain Markdown.
 
 ```text
 records/
-  journal.md          账本信息和判断索引
-  judgments/          各命题的先验、证据评估和更新历史
-  events/             事件定义、事前预测、实际观察和修订
+  journal.md          Journal metadata and judgment index
+  judgments/          Priors, evidence assessments, and update histories
+  events/             Event definitions, forecasts, observations, and revisions
 ```
 
-更多细节见 [Skill 入口](SKILL.md)、[账本结构与持久化](references/journal.md)、[概率更新与纠错](references/updating.md)和[复盘与交互示例](references/review.md)。
+See the [skill instructions](SKILL.md), [journal structure and storage](references/journal.md), [probability updates and corrections](references/updating.md), and [forecast review and examples](references/review.md).
+
+## License
+
+[MIT License](LICENSE).

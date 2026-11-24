@@ -1,128 +1,126 @@
-# 账本结构与持久化
+# Journal structure and storage
 
-## 选择账本
+## Choose a journal
 
-优先使用用户指定的账本路径。默认路径为本次加载的 `SKILL.md` 所在目录下的 `records/`，同一安装的各工作区共用这个默认路径。首次要求写入时创建账本，使用新建的默认路径时在反馈中说明。
+Prefer a journal path supplied by the user. Use `records/` next to the loaded `SKILL.md` by default. Workspaces using the same installation share this default location. Create the journal on the first write request and tell the user when the default location was created.
 
-只讨论方案、解释概念或演示虚构案例时不创建真实账本。后续会话先从选定的账本路径读取已有文件。
+Discussions, conceptual explanations, and fictional demonstrations do not create a real journal. In later conversations, read the existing files from the selected journal location first.
 
-采用可直接读写的 Markdown 文件，无需额外数据库或服务：
+The journal uses Markdown files that can be read and edited directly without an additional database or service.
 
 ```text
 records/
-  journal.md                账本 ID、时区、版本及判断索引（可重建）
-  judgments/J-<id>.md        命题、初始概率、关联证据评估和更新历史
-  events/E-<id>.md           事件定义、预测版本、观察结果及修订
+  journal.md                Journal ID, time zone, version, and rebuildable judgment index
+  judgments/J-<id>.md        Proposition, prior, evidence assessments, and update history
+  events/E-<id>.md           Event definition, forecast versions, observed results, and revisions
 ```
 
-ID 在本账本内唯一且稳定，建议使用短 UUID 并检查碰撞。用户看到的简称可变，ID 不变。不跨账本依赖短 ID；跨账本引用包含账本 ID。
+IDs are unique and stable within a journal. Prefer short UUIDs and check for collisions. A display title may change while the ID stays fixed. Include the journal ID in references that cross journals.
 
-## 判断记录
+## Judgment records
 
-每个判断文件包含下列部分，字段未知时写明待补充，不用虚构示例填入真实记录。
+Include these sections in each judgment file. Mark unknown fields as pending and keep fictional example values out of real records.
 
-### 固定起点
+### Original judgment
 
-| 字段 | 内容 |
-|---|---|
-| identity | judgment_id、创建时间、原话、标题、别名 |
-| proposition | 对象、命题 H、适用条件、起止时间或截止时间 |
-| resolution | 成立标准、判定来源、时间与时区、无法判断时如何处理 |
-| initial_prior | 初始概率、依据、来源、估计人和确认状态 |
-| relationships | 关联判断 ID、关系和理由 |
+| Field | Contents |
+| --- | --- |
+| identity | judgment_id, creation time, original wording, title, and aliases |
+| proposition | Subject, proposition H, applicable conditions, and time window or deadline |
+| resolution | Criteria, verification source, time and time zone, and handling for inconclusive outcomes |
+| initial_prior | Initial probability, rationale, source, estimator, and confirmation status |
+| relationships | Related judgment IDs, relationships, and reasons |
 
-模糊判断保持 `draft`。可用于正式预测的判断应有明确命题、时间范围和成立标准。判断生命周期为 `draft / active / resolved / inconclusive / retired`；是否存在待评估证据或待重算另行标记，不能混同生命周期。
+Keep vague judgments in `draft`. A formal forecast needs a clear proposition, time window, and resolution criteria. Lifecycle statuses are `draft / active / resolved / inconclusive / retired`. Track pending evidence and recalculation separately from the lifecycle status.
 
-### 初始概率
+### Initial probability
 
-缺少先验时，先询问“你认为这个判断成立的初始概率是多少？可以跳过，默认用 50%。”如果本次还要纳入新证据，询问纳入前的估计。有可用的交互方式时给用户回答机会。用户给出有效数值时采用并记录，包括 0% 和 100%。数值无效或含义不清时请用户澄清。
+When a prior is missing, ask the user in their language what initial probability they assign to the judgment and say they can skip it to use the 50% default. If the request also incorporates new evidence, ask for the estimate before that evidence. Give the user a chance to answer when interaction is available. Record any valid value they supply, including 0% or 100%. Ask for clarification if the value is invalid or ambiguous.
 
-用户跳过或在询问后未提供数值时，采用 50%，将来源标为 `default`，依据写为“用户未提供初始概率，使用 Skill 默认值”，并在反馈里说明。单独建立判断时，可以先保存已明确的内容，等待答复期间先验暂记 `null`。先验落定后，以该值建立首个有效模型，再处理尚未纳入的新证据。补齐旧记录时追加先验记录，保留原先缺少先验的历史。用户之后明确修正已采用的先验时，按模型版本规则追加修订。
+If the user skips or provides no number after being asked, use 50%, label the source `default`, record that the user supplied no initial probability and the skill default was used, and mention that in the response. When creating a judgment on its own, save already established details if helpful and keep the prior `null` while waiting. Once established, use the prior to start the first valid model before handling unincorporated evidence. When completing an older record, append the prior and preserve the history of its earlier absence. If the user later explicitly corrects the prior, append a revision using the model version rules.
 
-### 模型版本（追加）
+### Model versions (append-only)
 
-每个版本包含 `model_version`、创建时间、起始概率、依据、估计人、原因、被替代版本，以及该起始概率已经包含的证据 ID/版本集合。
+Record `model_version`, creation time, starting probability, rationale, estimator, reason for the version, superseded version, and the evidence IDs and versions already reflected in its starting probability.
 
-- 初版起始概率对应初始先验。
-- 纠正初始先验时，新版本从修正后的先验重新处理证据；旧先验和旧轨迹保留。
-- 用户主观重估建立新的起点快照，记录其中已包含的证据；只对尚未包含的信息继续更新。重估是否已包含某条证据不明确时询问，不再次乘入。
-- 模型版本变化不等于改变命题；命题实质变化则建立新判断。
+- The first model starts at the original prior.
+- When correcting the original prior, reprocess the evidence using the corrected prior in a new model version. Keep the original prior and update history.
+- A subjective reassessment creates a new starting estimate. Record which evidence it already reflects and update only on additional information. Ask whether it includes a particular item if unclear so the item is counted at most once.
+- Keep the proposition when only the model version changes. Create a new judgment for a material change in the proposition.
 
-### 事件评估及更新历史（追加）
+### Event assessments and update history (append-only)
 
-每项评估保存：
+| Field | Contents |
+| --- | --- |
+| assessment_id / revision | Unique assessment ID, revision, and prior version |
+| event_ref | Event ID, observation version, and the specific outcome E used |
+| judged_at / model_version | Assessment time and associated model version |
+| evidence_context | Historical evidence IDs and versions making up the conditioning set D |
+| likelihood_h / likelihood_not_h | P(E\|H,D) and P(E\|¬H,D), each a value, range, or null |
+| likelihood_basis | Source, estimator, reason, and confirmation status for each estimate |
+| likelihood_ratio | Value, scenario result, zero, positive infinity, or pending. Identify a calculated value or a direct user estimate |
+| direction | Supports, weakens, neutral, or pending. Apply no extra weight for credibility |
+| dependence | Basis for independence, or duplicate and related events, shared sources, and joint evidence groups |
+| application | applied / pending / duplicate / excluded / superseded, with the reason |
+| probability_before / after | Probability before and after the update. Use null for after when no update was applied |
+| correction | Reason, superseded item, and affected assessment IDs |
 
-| 字段 | 内容 |
-|---|---|
-| assessment_id / revision | 唯一评估 ID、修订版本、前一版本 |
-| event_ref | 事件 ID、观察版本，以及本次使用的具体结果 E |
-| judged_at / model_version | 评估时间与所属模型版本 |
-| evidence_context | 条件所依据的历史证据 ID/版本集合 D |
-| likelihood_h / likelihood_not_h | P(E\|H,D)、P(E\|¬H,D)，可为数值、范围或 null |
-| likelihood_basis | 分别说明来源、估计人、理由及确认状态 |
-| likelihood_ratio | 数值、情景结果、零、正无穷或待评估；标记计算值或用户直接估计 |
-| direction | 支持、削弱、中性或待评估；不额外乘“可信度权重” |
-| dependence | 独立假设及理由，或重复／相关事件、共同来源、联合证据组 |
-| application | applied / pending / duplicate / excluded / superseded，以及理由 |
-| probability_before / after | 更新前、后判断概率；未更新时 after 为 null |
-| correction | 修订原因、替代对象、受影响评估 ID |
+Apply a given observation version at most once in an active model. List members of a joint evidence group and apply either the group or its members. A version that only corrects an event supersedes the old observation without adding evidence. A genuinely new observation can be appended after checking dependence.
 
-一个有效模型中，同一事件观察版本只能应用一次；联合证据组必须列明成员，组和成员不得同时相乘。事件新版本若只是纠错，替代原事实，不构成第二份证据。出现真正的新信息时可以追加观察，但仍需检查依赖。
+### Current view (rebuildable)
 
-### 当前视图（可重建）
+Show the active model, applied evidence, current probability, the cutoff time for the calculation, outstanding evidence, and the `valid / pending_recalculation` status.
 
-显示当前有效模型、已纳入证据集合、当前概率、计算截至时间、尚未纳入的证据，以及 `valid / pending_recalculation` 状态。
+If earlier evidence has been invalidated and its reassessment is incomplete, flag the old posterior as no longer valid. Show at most the last probability supported by the part of the update chain that still holds, and explain that it excludes some current information. Keep the old model's final probability as history.
 
-旧证据被否定而新评估尚未完成时，旧后验不再标为有效当前值；最多展示最后一个仍可成立的前缀概率，并明确“未覆盖全部现有信息”。不能把旧模型的历史末值当作最新结论。
+### Resolution and review (append-only)
 
-### 结案与复盘（追加）
+Record the resolution time, actual result, verification source, final prospective forecast and its time, forecast versions, lessons learned, and future improvements. Append a revision if the result is disputed and preserve the original resolution.
 
-保存结案时间、实际结果、判定来源、最终事前预测及时间、各预测版本、复盘结论与未来改进。发生结果争议时追加修订；不要删除原结案记录。
+## Event records
 
-## 事件记录
+### Event definition
 
-### 事件定义
+Record the event ID, creation time, original wording, title, subject, description, verification criteria, forecast deadline, actual occurrence time, time learned, source, and associated judgment IDs. Keep entry time distinct from both occurrence time and prospective forecast time.
 
-保存事件 ID、创建时间、原话、标题、对象、事件描述、验证标准、预测期限、实际发生时间、信息获知时间、来源及关联判断 ID。录入时间不能冒充发生时间或事前预测时间。
+### Forecast versions (append-only)
 
-### 预测版本（追加）
+Record forecast ID, recording time, P(E), rationale, forecaster, expected resolution time, and status (`prospective / retrospective_claim / scenario`). Append later adjustments and preserve earlier probabilities.
 
-保存预测 ID、记录时间、P(E)、依据、预测人、预计判定时间与状态：`prospective / retrospective_claim / scenario`。后续预测调整追加新版本，不修改早期概率。
+The user may supply P(E) directly, or it may be derived from a judgment model. For a derived probability, cite the judgment ID, model version, p, a, b, and formula used at the time. Label probabilities derived from different models individually and leave them separate. If a direct user forecast differs from a model-derived forecast, keep both.
 
-P(E) 可由用户直接给出，或由某一判断模型推导；推导时引用判断 ID、模型版本、当时 p、a、b 和公式。不同模型推导出的 P(E) 分别标注，不擅自平均；用户直接预测和模型推导不一致时并列保留。
+### Observation versions (append-only)
 
-### 观察版本（追加）
+Record the version, occurrence time, time learned, entry time, outcome, source, whether the outcome is confirmed, any version it supersedes, and the reason for the correction. Describe the result as occurred, did not occur, partially occurred, unknown, or another applicable category. Preserve partial occurrence as a category rather than coding it as a binary outcome of 0.5.
 
-保存版本、发生时间、获知时间、录入时间、结果、来源、结果是否确定、替代版本和纠错原因。结果用“发生／未发生／部分发生／未知”等描述；部分发生不擅自编码为二元 0.5。
+### Action versions (append as needed)
 
-### 行动版本（按需追加）
+Record remedial actions, start times, goals, expected effects before implementation, actual results, and whether they change the proposition's conditions. An action can provide new information. Require a basis before increasing the judgment probability and distinguish implementing an action from observing its effect.
 
-保存补救行动、开始时间、目标、事前预期效果、实际结果和是否改变原命题条件。行动实施本身可以是新信息，但没有依据时不自动提高判断概率；禁止把采取行动等同于行动奏效。
+## Sync to Notion
 
-## 同步到 Notion
+In local Markdown, use paths relative to the current file for links to journal records and preserve valid anchors for observation versions. Generate upload copies from the local originals and replace those links with stable Notion URLs for the target records. Keep existing external source links.
 
-本地 Markdown 使用相对于当前文件的路径引用账本内记录，并保留有效的观察版本锚点。同步时从本地原件生成上传副本，将这些引用转换成目标记录的 Notion 页面固定链接。已发布的外部来源链接照常保留。
+1. Find readable Notion record pages in the existing destination by journal and record ID. Update existing pages in place. Create missing pages and obtain their URLs before adding cross-references. Use record page URLs for cross-references because re-uploading Markdown attachments changes their file block IDs.
+2. Resolve each relative journal link in the upload copy and check the target record ID. Point attachment links to the record page and preserve the observation version number in the link text. Create any missing target page before syncing files that reference it.
+3. Sync files into the existing Notion folder using the original directory structure. Preserve other content when replacing an attachment of the same name. Read back and verify the index, links on record pages and attachments, and both directions of judgment–event references.
 
-1. 按账本和记录 ID 在现有目的地查找可直接阅读的 Notion 记录页。已有页面就原位更新，缺失时先创建页面并取得 URL，再写入页面之间的交叉引用。Markdown 附件的文件块 ID 会随重新上传而改变，因此交叉引用使用记录页 URL。
-2. 逐个解析上传副本中的账本内相对链接，校对链接目标的记录 ID。附件链接指向记录页，观察版本号保留在链接文字中。若尚缺目标页，先补齐再同步引用它的文件。
-3. 在已有 Notion 文件夹中按原目录结构同步文件。替换同名附件时保留其他内容。读回检查索引、记录页与附件中的链接，以及判断到事件和事件到判断的对应关系。
+## Confirm an official probability update
 
-## 确认正式概率更新
+Before incorporating evidence, recalculating a probability, or making a subjective reassessment the official current estimate, read the journal and prepare the entire write proposal in the conversation. Include the judgment ID, previous and proposed probabilities, evidence and sources, conditional probabilities and likelihood ratio when applicable, and the records that would be created or changed. Identify the proposal with its `operation_id`. List any assistant estimates the proposal needs and explain that confirming the proposal also adopts those estimates.
 
-纳入证据、重算或将主观重估设为正式当前概率时，先只读账本，在对话中准备整个写入提案。提案列出判断 ID、更新前的概率、拟采用的概率、证据及其来源、条件概率和似然比（如适用），以及会新增或修改哪些记录。用本次操作的 `operation_id` 标识提案。需要采用助手估计时，在提案中明确列出，提醒用户确认同时表示采用这些估计。
+1. Label the proposal “Awaiting confirmation. Nothing saved yet.” Provide a **Confirm write** button in the user's language through an interactive prompt that can stay in the conversation. When `request_user_input_async` is available, use it with the proposal ID in the question and the localized **Confirm write** as an option. Keep the prompt available while waiting. If the user returns to the proposal after the button expires, offer it again. If the interface cannot retain a button, provide a localized written reply command below the proposal, such as `Confirm write <operation_id>` in English. Honor a localized command previously shown for the same proposal.
+2. Proceed only after the user explicitly confirms this proposal. A preselected button, confirmation of the input parameters alone, a timeout, or silence do not count. If the user defers, pause and leave the proposal and confirmation option in the conversation. If the user cancels, invalidate the proposal. Treat the entire operation as read-only until confirmation, including events, judgments, indexes, and drafts under `records/` or the user-selected journal. Only confirmed proposals can be synced to Notion.
+3. After confirmation, reread the journal and check the operation ID and the model and evidence versions. If the operation already exists, verify it under its original ID. If the proposed writes or their basis have changed, show an updated proposal and ask for confirmation again. Once verified, write and read back under the rules below. Tell the user that the recorded probability is the one they confirmed.
 
-1. 在对话里标注“待确认，尚未写入”，并通过可在对话中保留的交互提示提供「确认写入」按钮。有 `request_user_input_async` 时使用该工具，把提案 ID 放在问题中，把「确认写入」放在选项中。等待期间保留提示，用户继续处理提案时可以补发已失效的按钮。界面无法保留按钮时，在提案下提供文字入口 `确认写入 <operation_id>`。
-2. 只有用户明确确认这份提案才继续。按钮预选、仅确认输入参数、超时或没有答复均不算确认。用户暂缓时暂停，保留对话中的提案及确认入口。用户取消时作废提案。确认前按只读处理整个操作，`records/`（或指定账本）中的事件、判断、索引和草稿均无写入，也不把提案同步到 Notion。
-3. 收到确认后先重读账本，核对操作 ID、模型和证据版本。已写入的操作按原 ID 校验。待写入的内容或计算依据有变化时，展示新提案并重新请求确认。核对通过后按下述规则写入和读回验证。反馈里说明写入的是用户确认的正式概率。
+Standalone observations, prospective forecasts, prior initialization, and read-only queries follow their own workflows. When they are part of an official probability update, they wait with the rest of its proposal.
 
-单独记录观察或事前预测、建立初始先验和仅查询时，沿用各自的流程。它们若属于同一次正式概率更新，则随该提案一起等待确认。
+## Reliable writes
 
-## 可靠写入
+1. Read the latest files and note their versions before writing. If another session has made changes, reread and merge without overwriting its additions.
+2. Append facts, forecasts, assessments, and revisions while retaining old sections. The index and current view can be regenerated.
+3. Use the same `operation_id` across all files in one operation. Save the event first, then affected judgments, then refresh the index. Check that ID before retrying to avoid duplicate records or updates.
+4. When replacing an entire file, prefer a temporary file and atomic replacement or another available safe-write method. If a write partially fails, say which files succeeded and resume using the operation ID. Report completion only after the entire update succeeds.
+5. Read back to verify the IDs, reference versions, likelihood ratios, and current view against what was written. Report the record as saved only after verification.
 
-1. 写前读取最新文件，记录当前版本；发现并发变化则重新读取并合并，不覆盖其他会话的新增记录。
-2. 对事实、预测、评估及修订只追加，旧章节保留；索引和当前视图可重建更新。
-3. 每次跨文件操作使用同一 operation_id，先保存事件，再保存受影响判断，最后刷新索引。重试先检查该 ID，避免重复追加或应用。
-4. 全文件修改使用临时文件加原子替换等可用的安全写法。部分失败时明确哪些文件已成功；下次根据 operation_id 补齐，不宣称已完成整个更新。
-5. 写后重读检查 ID、引用版本、似然比、当前视图与实际写入一致。只有验证成功才告知“已保存”。
-
-没有专用账本脚本时用可用的文件工具按此约定操作，不需要为每次记录生成新程序。
+Use the available file tools to follow these conventions when no journal script is available. There is no need to generate a new program for each record.

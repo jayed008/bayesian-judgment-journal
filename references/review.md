@@ -1,71 +1,71 @@
-# 复盘与交互示例
+# Forecast review and examples
 
-## 结案
+## Resolve a judgment
 
-依据建档时的期限、成立标准和来源判定结果。明确成立、明确不成立才进入已解决记录；部分实现、资料缺失或争议未解时标为 inconclusive，不武断打 0 或 1。
+Use the deadline, criteria, and verification source recorded when the judgment was created. Mark the judgment resolved once it is clear whether the proposition held. Mark partial fulfillment, missing information, or unresolved disputes as `inconclusive` unless the original criteria resolve them.
 
-分开展示：
+List each of these items separately.
 
-- 初始预测及当时依据。
-- 最后一次在结果获知之前记录的预测，以及关键中间更新。
-- 实际结果、发生与获知时间、判定依据。
-- 哪些估计或观察需要修正，未来如何改进。
+- The initial forecast and its rationale at the time.
+- The last forecast recorded before the outcome became known, along with key intermediate updates.
+- The actual result, when it occurred and became known, and the verification source.
+- Estimates or observations that warrant correction and ways to improve future forecasts.
 
-结果揭晓后的概率不能代替事前预测参与评分。事后重算可以作为“如果当时采用另一模型”的分析，但不修改历史成绩。
+Use only forecasts made before the outcome became known for prospective scoring. A later recalculation can show what a different model would have predicted at the time. Preserve the historical scores.
 
-## 复盘问题
+## Review questions
 
-以证据回答，不强迫每次失败归咎于错误：
+Use the evidence to answer these questions. A forecast can miss even when the reasoning was sound.
 
-1. 先验依据是否合适，是否忽略基准情况或把别的对象的经验直接套用？
-2. 是否漏掉本可获取的信息？没有获取能力的证据不能事后假定当时已知。
-3. 两个条件概率是否高估或低估了证据的区分能力？
-4. 是否重复计算相关证据、把未知当作未发生，或将行动当作已经成功？
-5. 命题或期限是否悄悄改变，存在多少未结案或无法验证的预测？
-6. 什么具体改进适合未来使用？先写建议，不自动回写旧先验或改动其他判断。
+1. Was the prior well founded? Were relevant base rates overlooked or experiences from another subject applied without justification?
+2. Was information available at the time missed? Use only information that could actually have been obtained then.
+3. Did the two conditional estimates overstate or understate how well the evidence discriminated between outcomes?
+4. Were related observations counted twice, unknown results treated as non-occurrences, or actions treated as successful before their effects were observed?
+5. Did the proposition or deadline change? How many forecasts remain unresolved or unverifiable?
+6. What concrete change would improve future forecasts? Record suggestions and preserve past priors and unrelated judgments.
 
-一次 70% 的预测没有发生不意味着该概率错误。长期校准需要一组有事前记录且可验证的预测。
+An event forecast at 70% can fail to occur. Assess calibration across a set of timestamped, verifiable prospective forecasts.
 
-## 长期评估
+## Assess long-term performance
 
-用户请求预测表现时，先确定评价对象与选取规则：判断预测和事件预测分别统计；每个目标默认取一份首次事前预测，可另报最后一次事前预测，不能把同一目标的每次更新当独立样本。
+When asked about performance, first define the forecasts to score and the selection rule. Score judgment forecasts and event forecasts separately. Use the first eligible prospective forecast per target by default. The last prospective forecast can be reported separately. Use one forecast per target in each analysis.
 
-- 二元预测 Brier 分数为 mean((p−y)^2)，y 为 0 或 1，越低越好。报告样本数、时段和筛选规则；小样本不下稳定校准结论。
-- 按相近概率分组，对比平均预测概率和实际发生比例。不同事件或目标高度相关时说明样本依赖，不能声称拥有同样数量的独立观察。
-- 回溯陈述、演示情景、未知结果、不符合原验证标准的结果不进入事前评分。报告排除数量及原因，避免只挑已知成功／失败样本。
-- 事件预测若由多个判断模型给出，按模型分别评估或提前指定主预测，不在看到结果后择优。
-- 主观重估若确实记录于结果揭晓前，可以参与对应时间点的评分，但保留重估来源标签。
+- For binary outcomes, the Brier score is `mean((p − y)^2)`, where y is 0 or 1. Lower is better. Report the sample size, period, and selection rule. Small samples are insufficient for stable calibration conclusions.
+- Group similar probabilities and compare their mean forecast probability with their observed frequency. Note dependence among closely related events or targets when interpreting the sample size.
+- Exclude retrospective claims, demonstrations, unknown outcomes, and outcomes that fail the original verification criteria from prospective scoring. Report how many were excluded and why. Include both successes and failures that meet the selection rule.
+- If several judgment models predict an event, score them separately or designate a primary forecast in advance. Use a designation made before the outcome was known.
+- A subjective reassessment recorded before the outcome became known can be scored for that time point. Keep its source label.
 
-## 交互示例
+## Interaction examples
 
-以下仅用于说明行为，不作为真实用户输入。
+These examples illustrate behavior. Treat them as fictional data.
 
-### 同一判断与不同判断
+### Same judgment or different judgment
 
-已有判断：“项目 A 按现有预算，在 2027-03-31 前上线，以上线验收单为准”，概率 60%。
+The existing judgment gives Project A a 60% chance of launching by March 31, 2027, on its current budget, as verified by the launch acceptance form.
 
-- “A 按原预算三月底上线，我现在觉得四成”：匹配原判断，记录主观重估及理由；不能新建同义命题或构造 LR。
-- “A 在六月底前盈利有多大可能”：同一对象的新命题，新建关联判断，并补齐盈利标准。
-- “A 三月底能上线，但需要追加预算”：条件改变，建立新判断，保留原预算下的判断。
+- “I now give A a 40% chance of launching on its original budget by the end of March.” Match the original judgment and capture the subjective reassessment and rationale. Reuse the existing judgment and leave LR unspecified.
+- “How likely is A to become profitable by the end of June?” Create a related judgment about the new proposition and clarify what counts as profitable.
+- “A can launch by the end of March, but it needs more funding.” Create a new judgment for the changed conditions and keep the original budget judgment.
 
-### 同一事件关联两个判断
+### One event linked to two judgments
 
-“客户推迟付款”可能关联“项目现金足够支撑六个月”和“客户会续约”。事件事实只存一份，各判断分别估计 P(E|H,D)、P(E|¬H,D) 和 LR。不得用现金流判断的 LR 直接更新续约判断。
+“A client delayed payment” may relate to “The project has enough cash for six months” and “The client will renew.” Store the event facts once. Estimate P(E|H,D), P(E|¬H,D), and LR separately for each judgment. Use the renewal judgment's own LR to update it.
 
-### 信息不足
+### Insufficient information
 
-用户：“创始人谈竞争对手时眼神闪了一下，我觉得不妙。”
+The user says, “The founder looked away briefly when talking about competitors. I have a bad feeling about it.”
 
-保存“眼神变化”的观察和用户解释，查找关联判断；缺少似然依据时记录待评估。不能把故事中的 80%→65% 自动套用，也不能推定当事人的心理状态。
+Record the observed change in gaze and the user's interpretation, then look for related judgments. Mark the observation as pending assessment if there is no basis for estimating the likelihoods. Leave the probability and the person's mental state undetermined by this observation. An 80% to 65% change from an example does not apply automatically.
 
-### 纠错
+### Correction
 
-用户先报告客户未付款，后来证实客户按期付款，只是系统未入账。
+The user initially reports that a client did not pay, then verifies that the client paid on time and the system had not logged the payment.
 
-先预览观察修订，引用旧版本并解释原因。找到所有使用“未付款”的判断，从最早受影响处重新评估。不能把未付款和已付款当作两条独立证据，旧记录也不删除。若后续 LR 是以未付款为条件估计的，应重新评估，无法评估则在对话中说明待重算。重算完成后，等用户确认再把修订与正式概率一并写入。
+Preview the observation revision, cite the old version, and explain the correction. Find every judgment that used “did not pay” and reassess each from its earliest affected step. Preserve the original record and apply only the corrected observation. Reassess later likelihood ratios that depended on the original result. If they cannot be reassessed yet, say that recalculation is pending. After recalculating, ask for confirmation before saving the revision and official probability together.
 
-### 查询当前概率
+### Look up the current probability
 
-用户：“最开始那个项目判断，现在还有多大把握？”
+The user asks, “How confident are we now in that original project judgment?”
 
-先解析“那个项目”的候选命题；明确时直接查询，有歧义时询问具体判断。展示初始概率、当前有效概率、主要改变因素、估计截至时间和待处理证据；不能把初始概率覆盖成当前概率。
+Identify the proposition the user means. Look it up directly if the match is clear, or ask which judgment they mean. Report the original prior, current valid probability, main factors behind any changes, the estimate's cutoff time, and outstanding evidence. Keep the original prior intact.

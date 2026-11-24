@@ -1,4 +1,4 @@
 interface:
-  display_name: "贝叶斯判断账本"
-  short_description: "区分初始判断，记录事件预测与似然比，追踪概率更新、纠错及复盘"
-  default_prompt: "使用 $bayesian-judgment-journal 记录我的判断与关联事件，评估似然比，并持续更新判断成立的概率。"
+  display_name: "Bayesian Judgment Journal"
+  short_description: "Track judgments, evidence, updates, and forecast reviews"
+  default_prompt: "Use $bayesian-judgment-journal to record my judgments and related events, assess their likelihood ratios, and keep the probabilities up to date."
