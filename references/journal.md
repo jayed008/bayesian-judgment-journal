@@ -99,11 +99,11 @@ Record remedial actions, start times, goals, expected effects before implementat
 
 ## Sync to Notion
 
-In local Markdown, use paths relative to the current file for links to journal records and preserve valid anchors for observation versions. Generate upload copies from the local originals and replace those links with stable Notion URLs for the target records. Keep existing external source links.
+Use the local Markdown as the source for Notion native pages. Keep Markdown files local. Use relative links and valid observation anchors in those files. In Notion content, use the corresponding stable page URLs and preserve observation versions in the link text. Preserve external source links.
 
-1. Find readable Notion record pages in the existing destination by journal and record ID. Update existing pages in place. Create missing pages and obtain their URLs before adding cross-references. Use record page URLs for cross-references because re-uploading Markdown attachments changes their file block IDs.
-2. Resolve each relative journal link in the upload copy and check the target record ID. Point attachment links to the record page and preserve the observation version number in the link text. Create any missing target page before syncing files that reference it.
-3. Sync files into the existing Notion folder using the original directory structure. Preserve other content when replacing an attachment of the same name. Read back and verify the index, links on record pages and attachments, and both directions of judgment–event references.
+1. Run `python3 <skill-dir>/scripts/notion_sync_checkpoint.py <records-dir> <notion-root-id> scan` to inventory the source. The script selects files whose modification times are strictly later than the saved cutoff for this destination. Each cutoff represents the start time of a successfully verified run, so edits made during a run remain eligible next time. Keep the returned nanosecond values as exact strings.
+2. Read the existing native index and the `judgments` and `events` parent pages to resolve stable URLs by record ID. Reuse the existing index for `journal.md`. Create pages for unmapped new records under their corresponding parents and obtain their IDs before writing cross-references. Report ambiguous mappings instead of guessing. On the initial run without a cutoff, compare the local files with the existing pages to establish the baseline and update only differences. On later runs, process changed files and new unmapped records. Preserve unrelated Notion content and existing page IDs.
+3. Read back and verify every written page, including its content, record ID, parent and cross-references. Once the whole run succeeds, including a run with nothing to update, run the same command with `commit <started_at_ns> <previous_cutoff_ns>` in place of `scan`, using the values from that run. On scan, write, or verification failure, keep the previous cutoff so pending files remain eligible for retry. This state is local to the journal and destination.
 
 ## Confirm an official probability update
 
